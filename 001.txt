@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GENIUS | SaaS Platform</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        background: '#09090b', // Zinc 950
+                        surface: '#18181b',    // Zinc 900
+                        surfaceHover: '#27272a', // Zinc 800
+                        border: '#27272a',
+                        primary: '#6366f1',    // Indigo 500
+                        primaryHover: '#4f46e5',
+                        textMain: '#e4e4e7',   // Zinc 200
+                        textMuted: '#a1a1aa',  // Zinc 400
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444'
+                    },
+                    boxShadow: {
+                        'glow': '0 0 20px -5px rgba(99, 102, 241, 0.15)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #050505; color: #e4e4e7; }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
+        
+        /* Drag and Drop Styles */
+        .draggable-source { opacity: 0.4; border: 1px dashed #6366f1; }
+        .droppable-target { background: rgba(99, 102, 241, 0.1); border: 1px dashed #6366f1; }
+        
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col overflow-hidden">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <!-- AUTH VIEW -->
+    <div id="auth-view" class="fixed inset-0 z-50 flex items-center justify-center bg-background">
+        <div class="w-full max-w-md p-8 space-y-6">
+            <div class="text-center space-y-2">
+                <div class="w-12 h-12 bg-primary rounded-lg mx-auto flex items-center justify-center mb-4 shadow-glow">
+                    <i class="ph ph-hexagon text-2xl text-white"></i>
+                </div>
+                <h1 class="text-2xl font-semibold tracking-tight">Sign in to Genius</h1>
+                <p class="text-textMuted text-sm">Enter your credentials to access the workspace.</p>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium leading-none">Email</label>
+                    <input type="email" value="admin@genius.com" class="flex h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-textMuted" placeholder="name@example.com">
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium leading-none">Password</label>
+                    <input type="password" value="password" class="flex h-10 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full h-10 bg-primary hover:bg-primaryHover text-white font-medium rounded-md transition-all shadow-glow">Sign In</button>
+            </form>
+            <div class="text-center text-xs text-textMuted mt-4">
+                Protected by Enterprise Grade Security
+            </div>
+        </div>
+    </div>
+
+    <!-- APP SHELL (Hidden initially) -->
+    <div id="app-shell" class="hidden flex h-screen w-full">
+        
+        <!-- Sidebar -->
+        <aside class="w-64 border-r border-border bg-surface flex flex-col justify-between">
+            <div>
+                <div class="h-14 flex items-center px-4 border-b border-border">
+                    <i class="ph ph-hexagon text-primary text-xl mr-2"></i>
+                    <span class="font-semibold text-sm tracking-tight">GENIUS</span>
+                </div>
+                
+                <nav class="p-2 space-y-1">
+                    <button onclick="router.navigate('dashboard')" class="nav-item w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-surfaceHover text-textMuted hover:text-textMain transition-colors" data-page="dashboard">
+                        <i class="ph ph-squares-four text-lg"></i> Dashboard
+                    </button>
+                    <button onclick="router.navigate('crm')" class="nav-item w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-surfaceHover text-textMuted hover:text-textMain transition-colors" data-page="crm">
+                        <i class="ph ph-users text-lg"></i> CRM
+                    </button>
+                    <button onclick="router.navigate('billing')" class="nav-item w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-surfaceHover text-textMuted hover:text-textMain transition-colors" data-page="billing">
+                        <i class="ph ph-credit-card text-lg"></i> Billing
+                    </button>
+                    <button onclick="router.navigate('settings')" class="nav-item w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-surfaceHover text-textMuted hover:text-textMain transition-colors" data-page="settings">
+                        <i class="ph ph-gear text-lg"></i> Settings
+                    </button>
+                </nav>
+            </div>
+
+            <div class="p-4 border-t border-border">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-purple-600"></div>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-medium text-textMain">Alex Admin</span>
+                        <span class="text-xs text-textMuted">admin@genius.com</span>
+                    </div>
+                    <button onclick="auth.logout()" class="ml-auto text-textMuted hover:text-danger"><i class="ph ph-sign-out"></i></button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col min-w-0 bg-background">
+            <!-- Topbar -->
+            <header class="h-14 border-b border-border flex items-center justify-between px-6 bg-background/80 backdrop-blur">
+                <div class="flex items-center gap-4 w-96">
+                    <div class="relative w-full">
+                        <i class="ph ph-magnifying-glass absolute left-2.5 top-2.5 text-textMuted"></i>
+                        <input type="text" placeholder="Command (K)..." class="w-full h-9 pl-9 pr-3 rounded-md bg-surface border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary text-textMain placeholder:text-textMuted/50">
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button class="relative p-2 text-textMuted hover:text-textMain rounded-md hover:bg-surfaceHover transition-colors">
+                        <i class="ph ph-bell"></i>
+                        <span class="absolute top-2 right-2 w-2 h-2 bg-danger rounded-full"></span>
+                    </button>
+                    <div class="h-4 w-px bg-border"></div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-success"></span>
+                        <span class="text-xs font-medium text-textMuted">Operational</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dynamic Content Area -->
+            <div id="content-area" class="flex-1 overflow-auto p-6">
+                <!-- Content Injected via JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- TEMPLATES (Hidden) -->
+    <template id="tpl-dashboard">
+        <div class="space-y-6 animate-fade-in">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h2 class="text-2xl font-semibold tracking-tight text-white">Dashboard</h2>
+                    <p class="text-textMuted mt-1">Welcome back, here's what's happening today.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="px-3 py-1.5 text-xs font-medium bg-surface border border-border rounded hover:bg-surfaceHover">Last 7 Days</button>
+                    <button class="px-3 py-1.5 text-xs font-medium bg-surface border border-border rounded hover:bg-surfaceHover">Export</button>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="p-4 bg-surface border border-border rounded-xl">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-sm font-medium text-textMuted">Active Leads</span>
+                        <i class="ph ph-users text-textMuted"></i>
+                    </div>
+                    <div class="text-2xl font-semibold text-white">1,234</div>
+                    <div class="text-xs text-success mt-1 flex items-center"><i class="ph ph-trend-up mr-1"></i> +12.5%</div>
+                </div>
+                <div class="p-4 bg-surface border border-border rounded-xl">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-sm font-medium text-textMuted">Conversion Rate</span>
+                        <i class="ph ph-percent text-textMuted"></i>
+                    </div>
+                    <div class="text-2xl font-semibold text-white">3.2%</div>
+                    <div class="text-xs text-success mt-1 flex items-center"><i class="ph ph-trend-up mr-1"></i> +0.4%</div>
+                </div>
+                <div class="p-4 bg-surface border border-border rounded-xl">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-sm font-medium text-textMuted">Revenue (MRR)</span>
+                        <i class="ph ph-currency-dollar text-textMuted"></i>
+                    </div>
+                    <div class="text-2xl font-semibold text-white">$45.2k</div>
+                    <div class="text-xs text-textMuted mt-1">Stable</div>
+                </div>
+                <div class="p-4 bg-surface border border-border rounded-xl">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-sm font-medium text-textMuted">Appointments</span>
+                        <i class="ph ph-calendar text-textMuted"></i>
+                    </div>
+                    <div class="text-2xl font-semibold text-white">18</div>
+                    <div class="text-xs text-warning mt-1">3 pending confirmation</div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2 bg-surface border border-border rounded-xl p-6">
+                    <h3 class="text-lg font-semibold text-white mb-4">Recent Leads</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-3 hover:bg-surfaceHover rounded-lg transition-colors cursor-pointer border border-transparent hover:border-border">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-surfaceHover flex items-center justify-center text-xs font-bold text-white">JD</div>
+                                <div>
+                                    <div class="text-sm font-medium text-white">John Doe</div>
+                                    <div class="text-xs text-textMuted">Acme Corp • 2m ago</div>
+                                </div>
+                            </div>
+                            <span class="px-2 py-1 text-xs rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20">New</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 hover:bg-surfaceHover rounded-lg transition-colors cursor-pointer border border-transparent hover:border-border">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-surfaceHover flex items-center justify-center text-xs font-bold text-white">AS</div>
+                                <div>
+                                    <div class="text-sm font-medium text-white">Alice Smith</div>
+                                    <div class="text-xs text-textMuted">Stark Ind • 1h ago</div>
+                                </div>
+                            </div>
+                            <span class="px-2 py-1 text-xs rounded-full bg-purple-500/10 text-purple-500 border border-purple-500/20">Negotiation</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 hover:bg-surfaceHover rounded-lg transition-colors cursor-pointer border border-transparent hover:border-border">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-surfaceHover flex items-center justify-center text-xs font-bold text-white">MK</div>
+                                <div>
+                                    <div class="text-sm font-medium text-white">Mike Kogan</div>
+                                    <div class="text-xs text-textMuted">Cyberdyne • 3h ago</div>
+                                </div>
+                            </div>
+                            <span class="px-2 py-1 text-xs rounded-full bg-green-500/10 text-green-500 border border-green-500/20">Closed</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-surface border border-border rounded-xl p-6">
+                    <h3 class="text-lg font-semibold text-white mb-4">System Status</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-textMuted">API Latency</span>
+                            <span class="text-sm text-white font-medium">42ms</span>
+                        </div>
+                        <div class="h-1.5 w-full bg-surfaceHover rounded-full overflow-hidden">
+                            <div class="h-full bg-success w-[20%]"></div>
+                        </div>
+                        <div class="flex items-center justify-between mt-2">
+                            <span class="text-sm text-textMuted">Database Load</span>
+                            <span class="text-sm text-white font-medium">12%</span>
+                        </div>
+                        <div class="h-1.5 w-full bg-surfaceHover rounded-full overflow-hidden">
+                            <div class="h-full bg-primary w-[12%]"></div>
+                        </div>
+                        <div class="mt-4 p-3 bg-surfaceHover rounded-md text-xs text-textMuted border border-border">
+                            <i class="ph ph-info mr-1 text-primary"></i> Next billing cycle: Oct 24, 2023
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-crm">
+        <div class="h-full flex flex-col animate-fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-2xl font-semibold text-white">CRM</h2>
+                    <p class="text-textMuted text-sm">Manage your leads and pipeline.</p>
+                </div>
+                <div class="flex bg-surface p-1 rounded-lg border border-border">
+                    <button onclick="crm.setView('list')" id="btn-view-list" class="px-3 py-1.5 text-xs font-medium rounded bg-surfaceHover text-white shadow-sm transition-all">List</button>
+                    <button onclick="crm.setView('kanban')" id="btn-view-kanban" class="px-3 py-1.5 text-xs font-medium rounded text-textMuted hover:text-white transition-all">Kanban</button>
+                </div>
+            </div>
+
+            <!-- LIST VIEW -->
+            <div id="crm-list-view" class="flex-1 overflow-hidden bg-surface border border-border rounded-xl flex flex-col">
+                <!-- Toolbar -->
+                <div class="p-3 border-b border-border flex gap-2">
+                    <input type="text" id="crm-search" placeholder="Filter leads..." class="bg-background border border-border text-sm rounded px-2 py-1 text-textMain w-64 focus:outline-none focus:border-primary">
+                    <button class="px-2 py-1 text-xs text-textMuted hover:text-white border border-transparent hover:border-border rounded"><i class="ph ph-funnel"></i> Filter</button>
+                </div>
+                <!-- Table Header -->
+                <div class="grid grid-cols-12 gap-2 px-4 py-2 bg-surfaceHover text-xs font-medium text-textMuted border-b border-border uppercase tracking-wider">
+                    <div class="col-span-3 cursor-pointer hover:text-white" onclick="crm.sort('name')">Lead Name <i class="ph ph-arrows-down-up inline"></i></div>
+                    <div class="col-span-2">Status</div>
+                    <div class="col-span-2">Value</div>
+                    <div class="col-span-3">Last Interaction</div>
+                    <div class="col-span-2 text-right">Actions</div>
+                </div>
+                <!-- Table Body -->
+                <div id="crm-table-body" class="flex-1 overflow-auto">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- KANBAN VIEW (Hidden initially) -->
+            <div id="crm-kanban-view" class="hidden flex-1 overflow-x-auto">
+                <div class="flex gap-4 h-full min-w-max">
+                    <!-- Columns -->
+                    <div class="w-80 flex flex-col bg-surface border border-border rounded-xl h-full" data-status="new">
+                        <div class="p-3 border-b border-border flex justify-between items-center bg-surface/50 rounded-t-xl">
+                            <span class="text-sm font-semibold text-textMain">New</span>
+                            <span class="text-xs bg-surfaceHover px-2 py-0.5 rounded-full text-textMuted count-badge">0</span>
+                        </div>
+                        <div class="p-2 flex-1 overflow-y-auto space-y-2 kanban-column" ondrop="crm.drop(event)" ondragover="crm.allowDrop(event)">
+                            <!-- Cards injected here -->
+                        </div>
+                    </div>
+                    
+                    <div class="w-80 flex flex-col bg-surface border border-border rounded-xl h-full" data-status="active">
+                        <div class="p-3 border-b border-border flex justify-between items-center bg-surface/50 rounded-t-xl">
+                            <span class="text-sm font-semibold text-textMain">Active</span>
+                            <span class="text-xs bg-surfaceHover px-2 py-0.5 rounded-full text-textMuted count-badge">0</span>
+                        </div>
+                        <div class="p-2 flex-1 overflow-y-auto space-y-2 kanban-column" ondrop="crm.drop(event)" ondragover="crm.allowDrop(event)"></div>
+                    </div>
+                    
+                    <div class="w-80 flex flex-col bg-surface border border-border rounded-xl h-full" data-status="won">
+                        <div class="p-3 border-b border-border flex justify-between items-center bg-surface/50 rounded-t-xl">
+                            <span class="text-sm font-semibold text-textMain">Won</span>
+                            <span class="text-xs bg-surfaceHover px-2 py-0.5 rounded-full text-textMuted count-badge">0</span>
+                        </div>
+                        <div class="p-2 flex-1 overflow-y-auto space-y-2 kanban-column" ondrop="crm.drop(event)" ondragover="crm.allowDrop(event)"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="tpl-billing">
+        <div class="max-w-4xl mx-auto space-y-6 animate-fade-in">
+            <h2 class="text-2xl font-semibold text-white">Billing & Plans</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Starter -->
+                <div class="p-6 border border-border rounded-xl bg-surface flex flex-col">
+                    <h3 class="text-lg font-medium text-white">Starter</h3>
+                    <div class="mt-4 mb-6"><span class="text-3xl font-bold text-white">$0</span>/mo</div>
+                    <ul class="space-y-3 mb-8 flex-1 text-sm text-textMuted">
+                        <li class="flex items-center"><i class="ph ph-check text-success mr-2"></i> 1 User</li>
+                        <li class="flex items-center"><i class="ph ph-check text-success mr-2"></i> 100 Leads</li>
+                        <li class="flex items-center"><i class="ph ph-check text-success mr-2"></i> Basic Analytics</li>
+                    </ul>
+                    <button class="w-full py-2 border border-border rounded text-sm font-medium hover:bg-surfaceHover text-textMuted">Current Plan</button>
+                </div>
+
+                <!-- Pro -->
+                <div class="p-6 border border-primary rounded-xl bg-surface flex flex-col relative shadow-glow">
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full uppercase">Recommended</div>
+                    <h3 class="text-lg font-medium text-white">Pro</h3>
+                    <div class="mt-4 mb-6"><span class="text-3xl font-bold text-white">$49</span>/mo</div>
+                    <ul class="space-y-3 mb-8 flex-1 text-sm text-textMuted">
+                        <li class="flex items-center"><i class="ph ph-check text-success mr-2"></i> 5 Users</li>
+                        <li class="flex items-center"><i class="ph ph-check text-success mr-2"></i> Unlimited Leads</li>
+                        <li class="flex items-center"><i class="ph ph-check text-success mr-2"></i> Advanced CRM</li>
+                        <li class="flex items-center"><i class="ph ph-check text-success mr-2"></i> API Access</li>
+                    </ul>
+                    <button class="w-full py-2 bg-primary hover:bg-primaryHover rounded text-sm font-medium text-white transition-colors">Upgrade to Pro</button>
+                </div>
+
+                <!-- Enterprise -->
+                <div class="p-6 border border-border rounded-xl bg-surface flex flex-col">
+                    <h3 class="text-lg font-medium text-white">Enterprise</h3>
+                    <div class="mt-4 mb-6"><span class="text-3xl font-bold text-white">Custom</span></div>
+                    <ul class="space-y-3 mb-8 flex-1 text-sm text-textMuted">
+                        <li class="flex items-center"><i class="ph ph-check text-success mr-2"></i> Unlimited Users</li>
+                        <li class="flex items-center"><i class="ph ph-check text-success mr-2"></i> SSO & Audit Logs</li>
+                        <li class="flex items-center"><i class="ph ph-check text-success mr-2"></i> Dedicated Support</li>
+                    </ul>
+                    <button class="w-full py-2 border border-border rounded text-sm font-medium hover:bg-surfaceHover text-textMain">Contact Sales</button>
+                </div>
+            </div>
+            
+            <div class="bg-surface border border-border rounded-xl p-6">
+                <h3 class="text-lg font-medium text-white mb-4">Payment Method</h3>
+                <div class="flex items-center justify-between p-4 border border-border rounded-lg bg-surfaceHover/50">
+                    <div class="flex items-center gap-3">
+                        <i class="ph ph-credit-card text-2xl text-textMuted"></i>
+                        <div>
+                            <div class="text-sm font-medium text-white">Visa ending in 4242</div>
+                            <div class="text-xs text-textMuted">Expires 12/24</div>
+                        </div>
+                    </div>
+                    <button class="text-sm text-primary hover:underline">Edit</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-settings">
+        <div class="max-w-2xl mx-auto space-y-6 animate-fade-in">
+            <h2 class="text-2xl font-semibold text-white">Settings</h2>
+            
+            <div class="bg-surface border border-border rounded-lg overflow-hidden">
+                <div class="flex border-b border-border">
+                    <button class="px-6 py-3 text-sm font-medium border-b-2 border-primary text-white">Profile</button>
+                    <button class="px-6 py-3 text-sm font-medium text-textMuted hover:text-white transition-colors">Security</button>
+                    <button class="px-6 py-3 text-sm font-medium text-textMuted hover:text-white transition-colors">Organization</button>
+                </div>
+                
+                <div class="p-6 space-y-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-primary to-purple-600"></div>
+                        <div>
+                            <button class="px-3 py-1.5 text-xs bg-surfaceHover border border-border rounded hover:bg-surfaceHover text-white">Change Avatar</button>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-textMuted">First Name</label>
+                            <input type="text" value="Alex" class="w-full bg-background border border-border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-primary">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-medium text-textMuted">Last Name</label>
+                            <input type="text" value="Admin" class="w-full bg-background border border-border rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <label class="text-sm font-medium text-textMuted">Email</label>
+                        <input type="email" value="admin@genius.com" disabled class="w-full bg-background border border-border rounded px-3 py-2 text-sm text-textMuted cursor-not-allowed opacity-50">
+                    </div>
+                    
+                    <div class="pt-4 border-t border-border flex justify-end">
+                        <button class="px-4 py-2 bg-primary hover:bg-primaryHover text-white text-sm font-medium rounded transition-colors shadow-glow" onclick="toast.success('Profile updated successfully')">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        // --- UTILS ---
+        const $ = (selector) => document.querySelector(selector);
+        const $$ = (selector) => document.querySelectorAll(selector);
+        
+        const toast = {
+            show(message, type = 'default') {
+                const container = document.getElementById('toast-container');
+                const el = document.createElement('div');
+                const colors = type === 'success' ? 'border-l-4 border-success' : 'border-l-4 border-primary';
+                el.className = `bg-surface border border-border text-white px-4 py-3 rounded shadow-lg min-w-[300px] animate-fade-in flex items-center gap-3 ${colors}`;
+                el.innerHTML = `
+                    <i class="ph ${type === 'success' ? 'ph-check-circle text-success' : 'ph-info text-primary'} text-lg"></i>
+                    <span class="text-sm font-medium">${message}</span>
+                `;
+                container.appendChild(el);
+                setTimeout(() => {
+                    el.style.opacity = '0';
+                    setTimeout(() => el.remove(), 200);
+                }, 3000);
+            },
+            success(msg) { this.show(msg, 'success'); },
+            error(msg) { this.show(msg, 'error'); }
+        };
+
+        // --- AUTH MOCK ---
+        const auth = {
+            init() {
+                const form = document.getElementById('login-form');
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const btn = form.querySelector('button');
+                    const originalText = btn.innerText;
+                    btn.innerText = "Authenticating...";
+                    btn.disabled = true;
+
+                    // Simulate Supabase Auth delay
+                    setTimeout(() => {
+                        document.getElementById('auth-view').classList.add('hidden');
+                        document.getElementById('app-shell').classList.remove('hidden');
+                        router.navigate('dashboard');
+                        toast.success('Welcome back, Alex.');
+                    }, 800);
+                });
+            },
+            logout() {
+                window.location.reload();
+            }
+        };
+
+        // --- DATA STORE (Mock Supabase/React Query) ---
+        const store = {
+            leads: [
+                { id: 'l1', name: 'Sarah Connor', company: 'Tech Resistance', status: 'new', value: 5000, interaction: '2023-10-22' },
+                { id: 'l2', name: 'Tony Stark', company: 'Stark Ind', status: 'active', value: 50000, interaction: '2023-10-21' },
+                { id: 'l3', name: 'Bruce Wayne', company: 'Wayne Ent', status: 'won', value: 120000, interaction: '2023-10-20' },
+                { id: 'l4', name: 'Diana Prince', company: 'Themyscira Ltd', status: 'active', value: 15000, interaction: '2023-10-19' },
+                { id: 'l5', name: 'Clark Kent', company: 'Daily Planet', status: 'new', value: 2000, interaction: '2023-10-22' },
+            ],
+            get leadsByStatus() {
+                return this.leads.reduce((acc, lead) => {
+                    if (!acc[lead.status]) acc[lead.status] = [];
+                    acc[lead.status].push(lead);
+                    return acc;
+                }, {});
+            }
+        };
+
+        // --- ROUTER ---
+        const router = {
+            navigate(page) {
+                // Update Sidebar
+                $$('.nav-item').forEach(el => {
+                    if (el.dataset.page === page) {
+                        el.classList.add('bg-surfaceHover', 'text-white');
+                        el.classList.remove('text-textMuted');
+                    } else {
+                        el.classList.remove('bg-surfaceHover', 'text-white');
+                        el.classList.add('text-textMuted');
+                    }
+                });
+
+                // Inject Content
+                const content = document.getElementById('content-area');
+                const tpl = document.getElementById(`tpl-${page}`);
+                if (tpl) {
+                    content.innerHTML = '';
+                    content.appendChild(tpl.content.cloneNode(true));
+                    
+                    // Init Page Specific Logic
+                    if (page === 'crm') crm.init();
+                }
+            }
+        };
+
+        // --- CRM LOGIC ---
+        const crm = {
+            currentView: 'list',
+            
+            init() {
+                this.renderList();
+                this.renderKanban();
+                
+                // Search listener
+                $('#crm-search').addEventListener('input', (e) => {
+                    const term = e.target.value.toLowerCase();
+                    const filtered = store.leads.filter(l => l.name.toLowerCase().includes(term));
+                    this.renderList(filtered);
+                });
+            },
+
+            setView(view) {
+                this.currentView = view;
+                const listBtn = document.getElementById('btn-view-list');
+                const kanbanBtn = document.getElementById('btn-view-kanban');
+                const listView = document.getElementById('crm-list-view');
+                const kanbanView = document.getElementById('crm-kanban-view');
+
+                if (view === 'list') {
+                    listBtn.classList.add('bg-surfaceHover', 'text-white', 'shadow-sm');
+                    listBtn.classList.remove('text-textMuted');
+                    kanbanBtn.classList.remove('bg-surfaceHover', 'text-white', 'shadow-sm');
+                    kanbanBtn.classList.add('text-textMuted');
+                    listView.classList.remove('hidden');
+                    kanbanView.classList.add('hidden');
+                } else {
+                    kanbanBtn.classList.add('bg-surfaceHover', 'text-white', 'shadow-sm');
+                    kanbanBtn.classList.remove('text-textMuted');
+                    listBtn.classList.remove('bg-surfaceHover', 'text-white', 'shadow-sm');
+                    listBtn.classList.add('text-textMuted');
+                    kanbanView.classList.remove('hidden');
+                    listView.classList.add('hidden');
+                }
+            },
+
+            sort(field) {
+                store.leads.sort((a, b) => a[field].localeCompare(b[field]));
+                this.renderList();
+            },
+
+            renderList(data = store.leads) {
+                const tbody = document.getElementById('crm-table-body');
+                tbody.innerHTML = '';
+                
+                data.forEach(lead => {
+                    const row = document.createElement('div');
+                    row.className = 'grid grid-cols-12 gap-2 px-4 py-3 border-b border-border hover:bg-surfaceHover/50 transition-colors items-center text-sm group';
+                    row.draggable = true;
+                    row.ondragstart = (e) => this.drag(e, lead.id);
+                    
+                    const statusColors = {
+                        'new': 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+                        'active': 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+                        'won': 'bg-green-500/10 text-green-500 border-green-500/20'
+                    };
+
+                    row.innerHTML = `
+                        <div class="col-span-3 font-medium text-white">${lead.name}</div>
+                        <div class="col-span-2"><span class="px-2 py-0.5 rounded text-xs border ${statusColors[lead.status] || 'bg-gray-500/10'}">${lead.status}</span></div>
+                        <div class="col-span-2 text-textMuted">$${lead.value.toLocaleString()}</div>
+                        <div class="col-span-3 text-textMuted text-xs">${lead.interaction}</div>
+                        <div class="col-span-2 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button class="text-textMuted hover:text-white"><i class="ph ph-pencil-simple"></i></button>
+                        </div>
+                    `;
+                    tbody.appendChild(row);
+                });
+            },
+
+            renderKanban() {
+                // Clear columns
+                $$('.kanban-column').forEach(col => col.innerHTML = '');
+                
+                // Update counts
+                const counts = { new: 0, active: 0, won: 0 };
+
+                store.leads.forEach(lead => {
+                    counts[lead.status]++;
+                    const card = document.createElement('div');
+                    card.className = 'bg-background p-3 rounded border border-border shadow-sm cursor-grab active:cursor-grabbing hover:border-textMuted/50 transition-colors';
+                    card.draggable = true;
+                    card.ondragstart = (e) => this.drag(e, lead.id);
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs font-bold text-white">${lead.name}</span>
+                            <i class="ph ph-dots-three text-textMuted"></i>
+                        </div>
+                        <div class="text-xs text-textMuted mb-2">${lead.company}</div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-mono text-textMuted">$${lead.value}</span>
+                            <div class="w-5 h-5 rounded-full bg-surfaceHover flex items-center justify-center text-[10px] text-textMain">A</div>
+                        </div>
+                    `;
+                    const col = document.querySelector(`.kanban-column[data-status="${lead.status}"]`);
+                    if (col) col.appendChild(card);
+                });
+
+                // Update counts badges
+                document.querySelectorAll('.count-badge').forEach((badge, index) => {
+                    const keys = Object.keys(counts);
+                    badge.innerText = counts[keys[index]];
+                });
+            },
+
+            // DnD Logic
+            drag(ev, id) {
+                ev.dataTransfer.setData("text", id);
+                ev.target.classList.add('draggable-source');
+            },
+
+            allowDrop(ev) {
+                ev.preventDefault();
+                const col = ev.target.closest('.kanban-column');
+                if (col) col.classList.add('droppable-target');
+            },
+
+            drop(ev) {
+                ev.preventDefault();
+                const id = ev.dataTransfer.getData("text");
+                const col = ev.target.closest('.kanban-column');
+                
+                // Cleanup visuals
+                document.querySelectorAll('.kanban-column').forEach(c => c.classList.remove('droppable-target'));
+                document.querySelectorAll('.draggable-source').forEach(c => c.classList.remove('draggable-source'));
+
+                if (col) {
+                    const newStatus = col.dataset.status;
+                    const lead = store.leads.find(l => l.id === id);
+                    if (lead && lead.status !== newStatus) {
+                        lead.status = newStatus;
+                        this.renderKanban();
+                        this.renderList(); // Update list view in background
+                        toast.success(`Moved ${lead.name} to ${newStatus}`);
+                    }
+                }
+            }
+        };
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            auth.init();
+        });
+
+    </script>
+</body>
+</html>
